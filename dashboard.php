@@ -14,11 +14,14 @@ $search = $_GET['search'] ?? '';
 $status = $_GET['status'] ?? 'all';
 $priority = $_GET['priority'] ?? 'all';
 $tag = $_GET['tag'] ?? 'all';
+$dateRange = $_GET['date_range'] ?? 'all';
+$dateFrom = $_GET['date_from'] ?? '';
+$dateTo = $_GET['date_to'] ?? '';
 $msg = $_GET['msg'] ?? '';
 
 // Pass the logged-in user's ID as the second argument matching task_handler definition
 $userId = $_SESSION['user_id'];
-$tasks = getTasks($pdo, $userId, $search, $status, $priority, $tag);
+$tasks = getTasks($pdo, $userId, $search, $status, $priority, $tag, $dateRange, $dateFrom, $dateTo);
 $categories = getCategories($pdo, $userId);
 
 // Statistics
@@ -107,6 +110,7 @@ $highPriorityTasks = count(array_filter($tasks, fn($t) => $t['priority'] === 'Hi
                             elseif ($msg === 'updated') echo 'Task successfully updated!';
                             elseif ($msg === 'deleted') echo 'Task successfully deleted!';
                             elseif ($msg === 'imported') echo 'Tasks successfully imported!';
+                            elseif ($msg === 'password_reset') echo 'Your password was reset successfully. You are now logged in.';
                             else echo 'Operation completed successfully.';
                         ?>
                     </span>
@@ -192,6 +196,35 @@ $highPriorityTasks = count(array_filter($tasks, fn($t) => $t['priority'] === 'Hi
                         <?php endforeach; ?>
                     </select>
                 </div>
+
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Date:</span>
+                    <select name="date_range" id="dateRangeSelect" onchange="onDateRangeChange()" class="border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="all" <?= $dateRange === 'all' ? 'selected' : '' ?>>All Time</option>
+                        <option value="today" <?= $dateRange === 'today' ? 'selected' : '' ?>>Today</option>
+                        <option value="yesterday" <?= $dateRange === 'yesterday' ? 'selected' : '' ?>>Yesterday</option>
+                        <option value="this_week" <?= $dateRange === 'this_week' ? 'selected' : '' ?>>This Week</option>
+                        <option value="last_week" <?= $dateRange === 'last_week' ? 'selected' : '' ?>>Last Week</option>
+                        <option value="this_month" <?= $dateRange === 'this_month' ? 'selected' : '' ?>>This Month</option>
+                        <option value="last_month" <?= $dateRange === 'last_month' ? 'selected' : '' ?>>Last Month</option>
+                        <option value="last_7_days" <?= $dateRange === 'last_7_days' ? 'selected' : '' ?>>Last 7 Days</option>
+                        <option value="last_30_days" <?= $dateRange === 'last_30_days' ? 'selected' : '' ?>>Last 30 Days</option>
+                        <option value="last_90_days" <?= $dateRange === 'last_90_days' ? 'selected' : '' ?>>Last 90 Days</option>
+                        <option value="this_year" <?= $dateRange === 'this_year' ? 'selected' : '' ?>>This Year</option>
+                        <option value="last_year" <?= $dateRange === 'last_year' ? 'selected' : '' ?>>Last Year</option>
+                        <option value="custom" <?= $dateRange === 'custom' ? 'selected' : '' ?>>Custom Range...</option>
+                    </select>
+                </div>
+
+                <!-- Custom date range inputs: revealed only when "Custom Range..." is chosen -->
+                <div id="customDateRange" class="<?= $dateRange === 'custom' ? 'flex' : 'hidden' ?> items-center gap-2">
+                    <input type="date" name="date_from" value="<?= htmlspecialchars($dateFrom) ?>"
+                        class="border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <span class="text-xs text-slate-400">to</span>
+                    <input type="date" name="date_to" value="<?= htmlspecialchars($dateTo) ?>"
+                        class="border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button type="submit" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition">Apply</button>
+                </div>
             </div>
         </form>
 
@@ -229,13 +262,21 @@ $highPriorityTasks = count(array_filter($tasks, fn($t) => $t['priority'] === 'Hi
                             <div>
                                 <div class="flex items-start justify-between gap-2 mb-2">
                                     <div class="flex items-start space-x-3">
-                                        <form method="POST" action="includes/mysql/task_handler.php" class="mt-1 flex-shrink-0">
-                                            <input type="hidden" name="action" value="toggle">
-                                            <input type="hidden" name="id" value="<?= $task['id'] ?>">
-                                            <button type="submit" class="text-lg text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition">
-                                                <?= $task['completed'] ? '<i class="fa-solid fa-circle-check text-indigo-600 dark:text-indigo-400"></i>' : '<i class="fa-regular fa-circle"></i>' ?>
-                                            </button>
-                                        </form>
+                                        <?php if ($task['completed']): ?>
+                                            <!-- Completion is one-way: a done task is locked and cannot be undone -->
+                                            <span class="mt-1 flex-shrink-0 text-lg text-indigo-600 dark:text-indigo-400 cursor-not-allowed select-none"
+                                                  title="Completed - locked. Completed tasks cannot be undone.">
+                                                <i class="fa-solid fa-lock"></i>
+                                            </span>
+                                        <?php else: ?>
+                                            <form method="POST" action="includes/mysql/task_handler.php" class="mt-1 flex-shrink-0">
+                                                <input type="hidden" name="action" value="toggle">
+                                                <input type="hidden" name="id" value="<?= $task['id'] ?>">
+                                                <button type="submit" class="text-lg text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Mark as done">
+                                                    <i class="fa-regular fa-circle"></i>
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
                                         <div>
                                             <h4 class="font-semibold text-sm <?= $titleStyle ?> leading-snug"><?= htmlspecialchars($task['title']) ?></h4>
                                         </div>
@@ -413,6 +454,22 @@ $highPriorityTasks = count(array_filter($tasks, fn($t) => $t['priority'] === 'Hi
                     document.getElementById('delete-form-' + taskId).submit();
                 }
             });
+        }
+
+        // Date filter: presets apply instantly; "Custom Range..." reveals
+        // from/to inputs and waits for the Apply button instead of submitting.
+        function onDateRangeChange() {
+            const select = document.getElementById('dateRangeSelect');
+            const custom = document.getElementById('customDateRange');
+            if (!select) return;
+            if (select.value === 'custom') {
+                custom.classList.remove('hidden');
+                custom.classList.add('flex');
+            } else {
+                custom.classList.add('hidden');
+                custom.classList.remove('flex');
+                select.form.submit();
+            }
         }
     </script>
 </body>
