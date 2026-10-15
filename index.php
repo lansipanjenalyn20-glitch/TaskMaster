@@ -48,6 +48,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Log in to manage your task</p>
         </div>
 
+        <!-- Demo Account Banner -->
+        <div class="mb-5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 p-3.5 rounded-xl text-sm flex items-center justify-between">
+            <div>
+                <span class="block font-semibold text-indigo-900 dark:text-indigo-300 text-xs uppercase tracking-wider mb-0.5">Demo Account</span>
+                <span class="text-indigo-700 dark:text-indigo-400 font-mono text-xs">User: <strong>test_user</strong> | Pass: <strong>123456</strong></span>
+            </div>
+            <button type="button" onclick="fillDemo()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition shadow-sm">
+                Use
+            </button>
+        </div>
+
         <?php if ($msg === 'created' || $msg === 'registered'): ?>
             <div class="mb-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-xl text-sm font-medium">
                 The account already created. Please log in.
@@ -63,18 +74,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST" action="index.php" class="space-y-4">
             <div>
                 <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Username</label>
-                <input type="text" name="username" required class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" placeholder="enter username here">
+                <input type="text" id="username" name="username" required class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" placeholder="enter username here">
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Password</label>
-                <input type="password" name="password" required class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" placeholder="enter password here">
+                <input type="password" id="password" name="password" required class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" placeholder="enter password here">
             </div>
             <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition shadow-sm">Log In</button>
         </form>
 
-        <p class="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+        <p class="text-center text-sm mt-3">
+            <a href="forgot_password.php" class="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">Forgot password?</a>
+        </p>
+
+        <p class="text-center text-sm text-slate-500 dark:text-slate-400 mt-4">
             Don't have an account? <a href="register.php" class="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">Sign up</a>
         </p>
     </div>
+
+    <script>
+        function fillDemo() {
+            document.getElementById('username').value = 'test_user';
+            document.getElementById('password').value = '123456';
+        }
+    </script>
 </body>
 </html>
