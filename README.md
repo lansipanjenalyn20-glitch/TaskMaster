@@ -75,7 +75,7 @@ To test and evaluate the live application, a dedicated demo account has been pre
     
 -   **Demo Username:** `test_user`
     
--   **Demo Password:** `1234` _(Note: Evaluators can also freely use the registration page to test fresh user account creation and complete data sandboxing)._
+-   **Demo Password:** `123456` _(Note: Evaluators can also freely use the registration page to test fresh user account creation and complete data sandboxing)._
     
 
 ## 5. Security & Best Practices Implemented
