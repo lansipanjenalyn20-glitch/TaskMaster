@@ -308,9 +308,16 @@ $highPriorityTasks = count(array_filter($tasks, fn($t) => $t['priority'] === 'Hi
                                     </div>
                                     
                                     <div class="flex items-center space-x-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition self-end sm:self-auto">
-                                        <button onclick='openEditModal(<?= json_encode($task) ?>)' title="Edit Task" class="p-1.5 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition">
-                                            <i class="fa-solid fa-pen-to-square"></i>
-                                        </button>
+                                        <?php if ($task['completed']): ?>
+                                            <!-- Completed tasks are read-only: no editing once done -->
+                                            <span class="p-1.5 text-slate-300 dark:text-slate-600 cursor-not-allowed select-none" title="Completed tasks cannot be edited">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </span>
+                                        <?php else: ?>
+                                            <button onclick='openEditModal(<?= json_encode($task) ?>)' title="Edit Task" class="p-1.5 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </button>
+                                        <?php endif; ?>
                                         <form id="delete-form-<?= $task['id'] ?>" method="POST" action="includes/mysql/task_handler.php" class="inline">
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="id" value="<?= $task['id'] ?>">
