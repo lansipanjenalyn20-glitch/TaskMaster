@@ -8,11 +8,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
+    $email = trim($_POST['email'] ?? '');
 
     if (empty($username) || empty($password) || empty($confirm_password)) {
         $error = 'Please fill in all required fields.';
     } elseif ($password !== $confirm_password) {
         $error = 'Passwords do not match.';
+    } elseif (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Please enter a valid email address.';
     } else {
         // --- USERNAME VALIDATION: Check if username already exists in database ---
         $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
@@ -21,17 +24,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->fetch()) {
             $error = 'Username is already taken.';
         } else {
-            // Hash the password securely
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            // --- EMAIL VALIDATION: email is optional but must be unique if provided ---
+            if (!empty($email)) {
+                $estmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+                $estmt->execute([$email]);
+                if ($estmt->fetch()) {
+                    $error = 'That email is already registered.';
+                }
+            }
 
-            // Insert new user into the database
-            $insert_stmt = $pdo->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
-            if ($insert_stmt->execute([$username, $hashed_password])) {
-                // Redirect to login with success message
-                header('Location: index.php?msg=registered');
-                exit();
-            } else {
-                $error = 'Something went wrong. Please try again.';
+            if ($error === '') {
+                // Hash the password securely
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+                // Insert new user into the database
+                $insert_stmt = $pdo->prepare("INSERT INTO users (username, password, email) VALUES (?, ?, ?)");
+                if ($insert_stmt->execute([$username, $hashed_password, $email !== '' ? $email : null])) {
+                    // Redirect to login with success message
+                    header('Location: index.php?msg=registered');
+                    exit();
+                } else {
+                    $error = 'Something went wrong. Please try again.';
+                }
             }
         }
     }
@@ -68,6 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div>
                 <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Username</label>
                 <input type="text" name="username" required value="<?= htmlspecialchars($_POST['username'] ?? '') ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" placeholder="enter username here">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Email <span class="text-slate-400 dark:text-slate-500 font-normal normal-case">(optional - used for password reset)</span></label>
+                <input type="email" name="email" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" placeholder="you@example.com">
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Password</label>
